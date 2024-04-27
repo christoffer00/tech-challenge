@@ -3,19 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Client;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ClientsController extends Controller
 {
     public function index()
     {
-        $clients = Client::all();
+        $clients = Client::where('user_id', '=', Auth::user()->id);
 
         foreach ($clients as $client) {
             $client->append('bookings_count');
         }
 
-        return view('clients.index', ['clients' => $clients]);
+        return view('clients.index', ['clients' => $clients->get()]);
     }
 
     public function create()
@@ -25,7 +27,10 @@ class ClientsController extends Controller
 
     public function show($client)
     {
-        $client = Client::with('bookings')->where('id', $client)->first();
+        $client = Client::with('bookings')->where('id', $client)->firstOrFail();
+        if ($client->user_id !== Auth::user()->id) {
+            throw new AuthorizationException();
+        }
 
         return view('clients.show', ['client' => $client]);
     }
@@ -39,6 +44,7 @@ class ClientsController extends Controller
         $client->address = $request->get('address');
         $client->city = $request->get('city');
         $client->postcode = $request->get('postcode');
+        $client->user_id = Auth::user()->id;
         $client->save();
 
         return $client;
@@ -46,7 +52,12 @@ class ClientsController extends Controller
 
     public function destroy($client)
     {
-        Client::where('id', $client)->delete();
+        $client = Client::where('id', $client)->firstOrFail();
+        if ($client->user_id !== Auth::user()->id) {
+            throw new AuthorizationException();
+        }
+
+        Client::where('id', $client->id)->delete();
 
         return 'Deleted';
     }
