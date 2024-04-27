@@ -32,7 +32,11 @@
 </template>
 
 <script>
+import 'vue-toastification/dist/index.css';
+import Toast from 'vue-toastification';
 import axios from 'axios';
+
+Vue.use(Toast, {});
 
 export default {
     name: 'ClientsList',
@@ -41,7 +45,18 @@ export default {
 
     methods: {
         deleteClient(client) {
-            axios.delete(`/clients/${client.id}`);
+            axios.delete(`/clients/${client.id}`)
+                .then(() => {
+                    const index = this.clients.findIndex((c) => c.id === client.id);
+                    if (index !== -1) {
+                        this.clients.splice(index, 1);
+                        this.$forceUpdate();
+                    }
+                    this.$toast('Client deleted!');
+                })
+                .catch(() => {
+                    this.$toast.error('Client was not deleted!');
+                });
         }
     }
 }
