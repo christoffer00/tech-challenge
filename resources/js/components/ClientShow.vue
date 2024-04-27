@@ -37,6 +37,12 @@
 
                 <!-- Bookings -->
                 <div class="bg-white rounded p-4" v-if="currentTab == 'bookings'">
+                    <select @change="onBookingsFilterChange">
+                        <option :value="BOOKINGS_FILTER_ALL">All bookings</option>
+                        <option :value="BOOKINGS_FILTER_FUTURE">Future bookings only</option>
+                        <option :value="BOOKINGS_FILTER_PAST">Past bookings only</option>
+                    </select>
+
                     <h3 class="mb-3">List of client bookings</h3>
 
                     <template v-if="client.bookings && client.bookings.length > 0">
@@ -49,13 +55,15 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="booking in client.bookings" :key="booking.id">
-                                    <td>{{ formatDateRange(booking.start, booking.end) }}</td>
-                                    <td>{{ booking.notes }}</td>
-                                    <td>
-                                        <button class="btn btn-danger btn-sm" @click="deleteBooking(booking)">Delete</button>
-                                    </td>
-                                </tr>
+                                <template v-for="booking in client.bookings">
+                                    <tr v-if="shouldShowBooking(booking)">
+                                        <td>{{ formatDateRange(booking.start, booking.end) }}</td>
+                                        <td>{{ booking.notes }}</td>
+                                        <td>
+                                            <button class="btn btn-danger btn-sm" @click="deleteBooking(booking)">Delete</button>
+                                        </td>
+                                    </tr>
+                                </template>
                             </tbody>
                         </table>
                     </template>
@@ -80,6 +88,10 @@
 <script>
 import axios from 'axios';
 
+const BOOKINGS_FILTER_ALL = 1;
+const BOOKINGS_FILTER_FUTURE = 2;
+const BOOKINGS_FILTER_PAST = 3;
+
 export default {
     name: 'ClientShow',
 
@@ -88,6 +100,10 @@ export default {
     data() {
         return {
             currentTab: 'bookings',
+            BOOKINGS_FILTER_ALL,
+            BOOKINGS_FILTER_FUTURE,
+            BOOKINGS_FILTER_PAST,
+            currentBookingsFilter: BOOKINGS_FILTER_ALL,
         }
     },
 
@@ -112,6 +128,19 @@ export default {
             const toMinutes = `${toDate.getMinutes()}`.padStart(2, '0');
 
             return `${day} ${fromDate.getDate()} ${month} ${fromDate.getFullYear()}, ${fromHours}:${fromMinutes} to ${toHours}:${toMinutes}`;
+        },
+
+        shouldShowBooking(booking) {
+            switch (parseInt(this.currentBookingsFilter, 10)) {
+            case BOOKINGS_FILTER_FUTURE: return new Date(booking.start) > new Date();
+            case BOOKINGS_FILTER_PAST: return new Date(booking.start) < new Date();
+            default: return true;
+            }
+        },
+
+        onBookingsFilterChange(e) {
+            this.currentBookingsFilter = e.currentTarget.value;
+            this.$forceUpdate();
         },
     }
 }
