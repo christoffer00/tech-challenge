@@ -50,7 +50,7 @@
                             </thead>
                             <tbody>
                                 <tr v-for="booking in client.bookings" :key="booking.id">
-                                    <td>{{ booking.start }} - {{ booking.end }}</td>
+                                    <td>{{ formatDateRange(booking.start, booking.end) }}</td>
                                     <td>{{ booking.notes }}</td>
                                     <td>
                                         <button class="btn btn-danger btn-sm" @click="deleteBooking(booking)">Delete</button>
@@ -98,7 +98,21 @@ export default {
 
         deleteBooking(booking) {
             axios.delete(`/bookings/${booking.id}`);
-        }
+        },
+
+        formatDateRange(from, to) {
+            const fromDate = new Date(from);
+            const toDate = new Date(to);
+            const day = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date(fromDate));
+            const month = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(fromDate);
+
+            const fromHours = `${fromDate.getHours()}`.padStart(2, '0');
+            const fromMinutes = `${fromDate.getMinutes()}`.padStart(2, '0');
+            const toHours = `${toDate.getHours()}`.padStart(2, '0');
+            const toMinutes = `${toDate.getMinutes()}`.padStart(2, '0');
+
+            return `${day} ${fromDate.getDate()} ${month} ${fromDate.getFullYear()}, ${fromHours}:${fromMinutes} to ${toHours}:${toMinutes}`;
+        },
     }
 }
 </script>
