@@ -27,7 +27,11 @@ class ClientsController extends Controller
 
     public function show($client)
     {
-        $client = Client::with('bookings')->where('id', $client)->firstOrFail();
+        $client = Client::query()
+            ->with(['bookings' => fn ($query) => $query->orderBy('start', 'asc')])
+            ->where('id', $client)
+            ->firstOrFail();
+
         if ($client->user_id !== Auth::user()->id) {
             throw new AuthorizationException();
         }
